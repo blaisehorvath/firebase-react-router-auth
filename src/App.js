@@ -1,25 +1,37 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useContext, useEffect, useState } from 'react';
 import './App.css';
 
+// routing
+import { Route, BrowserRouter as Router, Switch } from "react-router-dom"
+import PrivateRoute from "./routing/PrivateRoute"
+
+// contexts, hooks
+import { LoginContext } from "./login/loginContext"
+import { FirebaseContext } from "./firbase/firebaseContext"
+
+// pages
+import LoginPage from "./pages/LoginPage"
+import PrivatePage from "./pages/PrivatePage"
+import { listenToAuthStateChanged } from "./firbase/authStateChange"
+
 function App() {
+  const firebaseApp = useContext(FirebaseContext)
+  const [loginState, setLoginState] = useState({ user: null, isLoading: true })
+  const loginContextValue = { loginState, setLoginState }
+
+  useEffect(() => {
+    listenToAuthStateChanged(firebaseApp, setLoginState)
+  }, [firebaseApp, setLoginState])
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <LoginContext.Provider value={loginContextValue}>
+      <Router>
+        <Switch>
+          <Route exact path="/" component={LoginPage}/>
+          <PrivateRoute exact path="/protected" component={PrivatePage}/>
+        </Switch>
+      </Router>
+    </LoginContext.Provider>
   );
 }
 
